@@ -111,7 +111,8 @@ architecture rtl of AC97Controller is
                 elsif (InitStatus = "0001") then
                     ShiftAudioOut(19) <= '0';   -- Set to write.
                     --ShiftAudioOut(18 downto 12) <= "0001110"; -- MIC IN VOL
-                    ShiftAudioOut(18 downto 12) <= "0010000"; -- LINE IN VOL (1Ah)
+                    --ShiftAudioOut(18 downto 12) <= "0010000"; -- LINE IN VOL (1Ah)
+                    ShiftAudioOut(18 downto 12) <= "0011100"; -- RECORD GAIN (1Ch)
                     ShiftAudioOut(11 downto 0) <= (others=>'0');
                     RegOut <= (others=>'0');
                     InitStatus <= "0011"; -- DEBUG
@@ -138,8 +139,10 @@ architecture rtl of AC97Controller is
                     ShiftAudioOut(18 downto 12) <= "0000100";
                     ShiftAudioOut(11 downto 0) <= (others=>'0'); -- HEADPHONE VOLUME (02h)
                     RegOut <= (others=>'0');
-                    RegOut(12 downto 8) <= (others=>'1');
-                    RegOut(4 downto 0) <= (others=>'1');
+                    --RegOut(12 downto 8) <= (others=>'1');
+                    RegOut(12 downto 8) <= "10000";
+                    --RegOut(4 downto 0) <= (others=>'1');
+                    RegOut(4 downto 0) <= "10000";
                     InitStatus <= "0111"; -- DEBUG
                 elsif (InitStatus = "0110") then
                     ShiftAudioOut(19) <= '0';   -- Set to write.
@@ -149,7 +152,7 @@ architecture rtl of AC97Controller is
                     InitStatus <= "0111";
                 elsif (InitStatus = "0111") then
                     ShiftAudioOut(19) <= '0';   -- Set to write.
-                    ShiftAudioOut(18 downto 12) <= "0001010";
+                    ShiftAudioOut(18 downto 12) <= "0011010";
                     ShiftAudioOut(11 downto 0) <= (others=>'0'); -- RECORD SEL (1Ah)
                     RegOut <= (others=>'0');
                     RegOut(2 downto 0) <= "100";

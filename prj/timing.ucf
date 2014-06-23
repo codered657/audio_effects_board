@@ -3,3 +3,7 @@
 #AC97 Bit Clock Domain
 NET "BitClk" TNM_NET = BitClk;
 TIMESPEC TS_BitClk = PERIOD "BitClk" 48 KHz HIGH 50%;
+#Created by Constraints Editor (xc6slx45-csg324-3) - 2014/06/12
+#System Clock
+NET "Clk" TNM_NET = Clk;
+TIMESPEC TS_Clk = PERIOD "Clk" 100 MHz HIGH 50%;
