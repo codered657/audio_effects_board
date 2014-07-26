@@ -1,3 +1,13 @@
+--  Soft Clipper Effect
+--
+--  Description: Soft clipping audio effect.
+--
+--  Notes: None.
+--
+--  Revision History:
+--      Steven Okai     06/22/14    1) Initial revision.
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -64,7 +74,6 @@ architecture rtl of SoftClipper is
             
             AboveThresholdAudioP(2) <= std_logic_vector(signed(AudioP(1)) - signed(ThresholdP(1)));
             
-            -- TODO: Needs to be shifted right for fixed point arithmetic...need to determine where decimal point is first/how much precision is needed.
             TempAboveThresholdAudioP3 := std_logic_vector(signed(AboveThresholdAudioP(2)) * signed(pad_left(Coefficient, 18, '0')));
             AboveThresholdAudioP(3) <= TempAboveThresholdAudioP3(17+8 downto 8);
             

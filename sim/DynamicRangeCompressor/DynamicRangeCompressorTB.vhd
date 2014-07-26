@@ -1,3 +1,13 @@
+--  Dynamic Range Compressor Test Bench
+--
+--  Description: Test bench for dynamic range compression processor.
+--
+--  Notes: None.
+--
+--  Revision History:
+--      Steven Okai     06/22/14    1) Initial revision.
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;

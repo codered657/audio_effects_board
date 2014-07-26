@@ -1,3 +1,13 @@
+--  AC'97 Controller
+--
+--  Description: An AC'97 audio codec controller.
+--
+--  Notes:  None.
+--
+--  Revision History:
+--      Steven Okai     06/22/14    1) Initial revision.
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -140,9 +150,9 @@ architecture rtl of AC97Controller is
                     ShiftAudioOut(11 downto 0) <= (others=>'0'); -- HEADPHONE VOLUME (02h)
                     RegOut <= (others=>'0');
                     --RegOut(12 downto 8) <= (others=>'1');
-                    RegOut(12 downto 8) <= "10000";
+                    RegOut(12 downto 8) <= "11000";
                     --RegOut(4 downto 0) <= (others=>'1');
-                    RegOut(4 downto 0) <= "10000";
+                    RegOut(4 downto 0) <= "11000";
                     InitStatus <= "0111"; -- DEBUG
                 elsif (InitStatus = "0110") then
                     ShiftAudioOut(19) <= '0';   -- Set to write.

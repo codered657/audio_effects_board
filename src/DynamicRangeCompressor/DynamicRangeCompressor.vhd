@@ -1,3 +1,16 @@
+--  Dynamic Range Compression Processor
+--
+--  Description: A dynamic range compression processor.
+--
+--  Notes:  http://www.eecs.qmul.ac.uk/~josh/documents/GiannoulisMassbergReiss-dynamicrangecompression-JAES2012.pdf
+--          http://www.cs.tut.fi/~sgn14006/PDF/L05-dynamics.pdf
+--          http://www.eecs.qmul.ac.uk/~dimitrios/A%20Tutorial%20on%20dynamic%20range%20compression%20design.pdf
+--          http://www.uaudio.com/webzine/2005/july/text/content2.html
+--
+--  Revision History:
+--      Steven Okai     06/22/14    1) Initial revision.
+--
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
