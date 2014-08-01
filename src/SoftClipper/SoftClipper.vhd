@@ -12,15 +12,19 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.GeneralFuncPkg.all;
+use work.CommandBusPkg.all;
 
 entity SoftClipper is
+    generic (
+        CMD_ACK_DELAY   : positive := 8
+    );
     port (
         Clk             : in  std_logic;
 
         Enable          : in  std_logic;
         
-        Threshold       : in  std_logic_vector(17 downto 0);    -- TODO: limit this to 17 bits...must be positive after all.
-        Coefficient     : in  std_logic_vector(7 downto 0);
+        CmdBusIn        : in  cmd_bus_in;
+        CmdBusOut       : out cmd_bus_out;
         
         AudioIn         : in  std_logic_vector(17 downto 0);
         AudioInValid    : in  std_logic;
@@ -32,12 +36,28 @@ end SoftClipper;
 
 architecture rtl of SoftClipper is
 
+    -- Memory map.
+    constant ADDR_THRESHOLD     : natural := 0;
+    constant ADDR_COEFFICIENT   : natural := 1;
+    
     signal AboveThresholdAudioP : slv_18_vector(0 to 4);
     signal AudioP               : slv_18_vector(0 to 4);
     signal AudioValidP          : std_logic_vector(0 to 4);
     signal ThresholdP           : slv_18_vector(0 to 4);
     signal NegativeThreshold    : std_logic_vector(17 downto 0);
     signal OutOfBoundsP         : std_logic_vector(0 to 4);
+
+    signal Registers            : slv_32_vector(0 to 1);
+    alias Threshold             : std_logic_vector(17 downto 0) is Registers(ADDR_THRESHOLD)(17 downto 0);    -- TODO: limit this to 17 bits...must be positive after all.
+    alias Coefficient           : std_logic_vector(7 downto 0) is Registers(ADDR_THRESHOLD)(7 downto 0);
+    constant REG_MASKS          : slv_32_vector(0 to 1) := (
+        ADDR_THRESHOLD      => (Threshold'range => '1', others => '0'),
+        ADDR_COEFFICIENT    => (Coefficient'range => '1', others => '0')
+    );
+    
+    signal WriteP               : std_logic_vector(1 to CMD_ACK_DELAY);
+    signal WriteEdge            : std_logic;
+    signal AckP                 : std_logic_vector(1 to CMD_ACK_DELAY);
     
     begin
     
@@ -86,4 +106,27 @@ architecture rtl of SoftClipper is
         end if;
     end process;
 
+    regs : process (Clk)
+        variable CmdAddr    : std_logic_vector(2 downto 2);
+        begin
+        if (rising_edge(Clk)) then
+        
+            -- Edge detect the write pulse
+            WriteP <= CmdBusIn.Write & WriteP(WriteP'low to WriteP'high-1);
+            WriteEdge <= WriteP(WriteP'high-1) and (not WriteP(WriteP'high));  -- TODO: Do I need to delay this more for a multicycle path??? Probably...otherwise this possibly gets there before address?
+            
+            AckP <= (CmdBusIn.Write or CmdBusIn.Read) & AckP(AckP'low to AckP'high-1);
+            CmdBusOut.Ack <= AckP(AckP'high); -- TODO: can this be tied directly to Ack instead of one last register?
+
+            CmdAddr := CmdBusIn.Address(CmdAddr'range);
+            -- TODO: add mask so unused bits get synthed out.
+            CmdBusOut.Data(31 downto 0) <= Registers(slv_to_unsigned_int(CmdAddr)) and REG_MASKS(slv_to_unsigned_int(CmdAddr));  -- TODO: Should this even be registered?
+            
+            -- TODO: pad data out????
+            if (WriteEdge = '1') then
+                Registers(slv_to_unsigned_int(CmdAddr)) <= CmdBusIn.Data(31 downto 0) and REG_MASKS(slv_to_unsigned_int(CmdAddr));
+            end if;
+ 
+        end if;
+    end process regs;
 end rtl;
