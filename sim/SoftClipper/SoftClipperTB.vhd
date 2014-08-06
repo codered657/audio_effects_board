@@ -6,6 +6,7 @@
 --
 --  Revision History:
 --      Steven Okai     06/22/14    1) Initial revision.
+--      Steven Okai     08/05/14    1) Updated to use command bus.
 --
 
 library ieee;
@@ -22,8 +23,8 @@ architecture test of SoftClipperTB is
 
     signal Enable          : std_logic := '1';
     
-    signal Threshold       : std_logic_vector(17 downto 0) := signed_int_to_slv(64, 18);
-    signal Coefficient     : std_logic_vector(7 downto 0) := "00000001";
+    signal CmdBusIn        : cmd_bus_in := CMD_BUS_IN_IDLE;
+    signal CmdBusOut       : cmd_bus_out;
     
     signal AudioIn         : std_logic_vector(17 downto 0) := (others=>'0');
     signal AudioInValid    : std_logic := '0';
@@ -37,6 +38,10 @@ architecture test of SoftClipperTB is
     
     process
         begin
+        
+        -- TODO: use constants, maybe add non-slv argument options by overloading functions?
+        cmd_bus_write_verify(x"0000", x"01000000", Clk, CmdBusIn, CmdBusOut);
+        cmd_bus_write_verify(x"0004", x"00000001", Clk, CmdBusIn, CmdBusOut);
         
         wait until rising_edge(Clk);
         AudioInValid <= '1';
@@ -71,8 +76,8 @@ architecture test of SoftClipperTB is
 
             Enable          => Enable,          --: in  std_logic;
 
-            Threshold       => Threshold,       --: in  std_logic_vector(17 downto 0);
-            Coefficient     => Coefficient,     --: in  std_logic_vector(7 downto 0);
+            CmdBusIn        => CmdBusIn,        --: in  cmd_bus_in;
+            CmdBusOut       => CmdBusOut,       --: out cmd_bus_out;
 
             AudioIn         => AudioIn,         --: in  std_logic_vector(17 downto 0);
             AudioInValid    => AudioInValid,    --: in  std_logic;

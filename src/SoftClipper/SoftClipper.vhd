@@ -6,6 +6,7 @@
 --
 --  Revision History:
 --      Steven Okai     06/22/14    1) Initial revision.
+--      Steven Okai     08/05/14    1) Updated to use command bus.
 --
 
 library ieee;
