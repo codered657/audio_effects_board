@@ -9,6 +9,7 @@
 --
 --  Revision History:
 --      Steven Okai     06/22/14    1) Initial revision.
+--      Steven Okai     08/23/14    1) Updated to use command bus.
 --
 
 library ieee;
@@ -16,6 +17,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use work.GeneralFuncPkg.all;
+use work.CommandBusPkg.all;
 
 entity DynamicRangeCompressor is
     port (
@@ -40,6 +42,14 @@ end DynamicRangeCompressor;
 
 architecture rtl of DynamicRangeCompressor is
     
+    -- Memory map.
+    constant ADDR_ENABLE        : natural := 0;
+    constant ADDR_ATTACK_TIME   : natural := 1;
+    constant ADDR_RELEASE_TIME  : natural := 2;
+    constant ADDR_THRESHOLD     : natural := 3;
+    constant ADDR_RATIO         : natural := 4;
+    constant ADDR_MAKE_UP_GAIN  : natural := 5;
+    
     signal AudioP       : slv_18_vector(0 to 10);
     signal AudioValidP  : std_logic_vector(0 to 10);
     signal PeakLevelP3  : std_logic_vector(17 downto 0);
@@ -55,6 +65,27 @@ architecture rtl of DynamicRangeCompressor is
     signal TotalGaindBP8        : std_logic_vector(4 downto 0);
     signal SignedTotalGaindBP8  : std_logic_vector(5 downto 0);
     signal TotalGaindBP9        : std_logic_vector(5 downto 0);
+    
+    
+    signal Registers            : slv_32_vector(0 to 5);
+    alias Enable                : std_logic is Registers(ADDR_THRESHOLD)(0);
+    alias AttackTime            : std_logic_vector(2 downto 0) is Regsisters(ADDR_ATTACK_TIME)(2 downto 0);
+    alias ReleaseTime           : std_logic_vector(2 downto 0) is Regsisters(ADDR_RELEASE_TIME)(2 downto 0);
+    alias Threshold             : std_logic_vector(4 downto 0) is Regsisters(ADDR_THRESHOLD)(4 downto 0);
+    alias Ratio                 : std_logic_vector(5 downto 0) is Regsisters(ADDR_RATIO)(5 downto 0);
+    alias MakeUpGain            : std_logic_vector(3 downto 0) is Regsisters(ADDR_MAKE_UP_GAIN)(3 downto 0);
+    constant REG_MASKS          : slv_32_vector(0 to 5) := (
+        ADDR_ENABLE         => (0 => '1', others => '0'),
+        ADDR_ATTACK_TIME    => (AttackTime'range => '1', others => '0'),
+        ADDR_RELEASE_TIME   => (ReleaseTime'range => '1', others => '0'),
+        ADDR_THRESHOLD      => (Threshold'range => '1', others => '0'),
+        ADDR_RATIO          => (Ratio'range => '1', others => '0'),
+        ADDR_MAKE_UP_GAIN   => (MakeUpGain'range => '1', others => '0')
+    );
+    
+    signal WriteP               : std_logic_vector(1 to CMD_ACK_DELAY);
+    signal WriteEdge            : std_logic;
+    signal AckP                 : std_logic_vector(1 to CMD_ACK_DELAY);
     
     begin
     
@@ -180,4 +211,28 @@ architecture rtl of DynamicRangeCompressor is
             DataOut         => TotalGaindBP9,
             DataOutValid    => open
         );
+        
+    regs : process (Clk)
+        variable CmdAddr    : std_logic_vector(log2(Registers)+2-1 downto 2);
+        begin
+        if (rising_edge(Clk)) then
+        
+            -- Edge detect the write pulse
+            WriteP <= CmdBusIn.Write & WriteP(WriteP'low to WriteP'high-1);
+            WriteEdge <= WriteP(WriteP'high-1) and (not WriteP(WriteP'high));  -- TODO: Do I need to delay this more for a multicycle path??? Probably...otherwise this possibly gets there before address?
+            
+            AckP <= (CmdBusIn.Write or CmdBusIn.Read) & AckP(AckP'low to AckP'high-1);
+            CmdBusOut.Ack <= AckP(AckP'high); -- TODO: can this be tied directly to Ack instead of one last register?
+
+            CmdAddr := CmdBusIn.Address(CmdAddr'range);
+            -- TODO: add mask so unused bits get synthed out.
+            CmdBusOut.Data(31 downto 0) <= Registers(slv_to_unsigned_int(CmdAddr)) and REG_MASKS(slv_to_unsigned_int(CmdAddr));  -- TODO: Should this even be registered?
+            
+            -- TODO: pad data out????
+            if (WriteEdge = '1') then
+                Registers(slv_to_unsigned_int(CmdAddr)) <= CmdBusIn.Data(31 downto 0) and REG_MASKS(slv_to_unsigned_int(CmdAddr));
+            end if;
+ 
+        end if;
+    end process regs;
 end rtl;
