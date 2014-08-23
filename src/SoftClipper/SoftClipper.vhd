@@ -7,6 +7,7 @@
 --  Revision History:
 --      Steven Okai     06/22/14    1) Initial revision.
 --      Steven Okai     08/05/14    1) Updated to use command bus.
+--      Steven Okai     08/23/14    1) Changed enable to a register.
 --
 
 library ieee;
@@ -21,8 +22,6 @@ entity SoftClipper is
     );
     port (
         Clk             : in  std_logic;
-
-        Enable          : in  std_logic;
         
         CmdBusIn        : in  cmd_bus_in;
         CmdBusOut       : out cmd_bus_out;
@@ -38,8 +37,9 @@ end SoftClipper;
 architecture rtl of SoftClipper is
 
     -- Memory map.
-    constant ADDR_THRESHOLD     : natural := 0;
-    constant ADDR_COEFFICIENT   : natural := 1;
+    constant ADDR_ENABLE        : natural := 0;
+    constant ADDR_THRESHOLD     : natural := 1;
+    constant ADDR_COEFFICIENT   : natural := 2;
     
     signal AboveThresholdAudioP : slv_18_vector(0 to 4);
     signal AudioP               : slv_18_vector(0 to 4);
@@ -48,10 +48,12 @@ architecture rtl of SoftClipper is
     signal NegativeThreshold    : std_logic_vector(17 downto 0);
     signal OutOfBoundsP         : std_logic_vector(0 to 4);
 
-    signal Registers            : slv_32_vector(0 to 1);
+    signal Registers            : slv_32_vector(0 to 2);
+    alias Enable                : std_logic is Registers(ADDR_THRESHOLD)(0);
     alias Threshold             : std_logic_vector(17 downto 0) is Registers(ADDR_THRESHOLD)(17 downto 0);    -- TODO: limit this to 17 bits...must be positive after all.
     alias Coefficient           : std_logic_vector(7 downto 0) is Registers(ADDR_THRESHOLD)(7 downto 0);
-    constant REG_MASKS          : slv_32_vector(0 to 1) := (
+    constant REG_MASKS          : slv_32_vector(0 to 2) := (
+        ADDR_ENABLE         => (0 => '1', others => '0'),
         ADDR_THRESHOLD      => (Threshold'range => '1', others => '0'),
         ADDR_COEFFICIENT    => (Coefficient'range => '1', others => '0')
     );
@@ -108,7 +110,7 @@ architecture rtl of SoftClipper is
     end process;
 
     regs : process (Clk)
-        variable CmdAddr    : std_logic_vector(2 downto 2);
+        variable CmdAddr    : std_logic_vector(log2(Registers)+2-1 downto 2);
         begin
         if (rising_edge(Clk)) then
         

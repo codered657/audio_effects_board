@@ -15,6 +15,31 @@ import serial
 import time
 import pyfpga.fpgacmd as cmd
 
+ADDR_TOP_LEVEL = 0x00;
+
+ADDR_CHORUS = dict(ENABLE       = 0x00,
+                   EFFECT_LEVEL = 0x04,
+                   NUM_VOICES   = 0x08,
+                   WIDTH        = 0x0C,
+                   RATE         = 0x10,
+                   DELAY        = 0x14
+                  );
+
+ADDR_SOFT_CLIPPER = dict(ENABLE         = 0x00,
+                         THRESHOLD      = 0x04,
+                         COEFFICIENT    = 0x08
+                        );
+
+ADDR_DISTORTION = 0x00;
+
+ADDR_COMPRESSOR = dict(ENABLE       = 0x00,
+                       ATTACK_TIME  = 0x04,
+                       RELEASE_TIME = 0x08,
+                       THRESHOLD    = 0x0C,
+                       RATIO        = 0x10,
+                       MAKE_UP_GAIN = 0x14
+                      );
+
 class App:
 
     def __init__(self, master):
@@ -95,12 +120,19 @@ class App:
         #print self.port.inWaiting();
         #print self.port.read();
 
+    def set_chorus_enable(self, enable):
+        # TODO: Write level...
+        print level;
+        try:
+            cmd.write_verify(ADDR_CHORUS["ENABLE"], level, self.port);
+        except IOError, err:
+            sys.stderr.write('ERROR: %s\n' % str(err));
+
     def set_chorus_effect_level(self, level):
         # TODO: Write level...
         print level;
-        raise IOError("Help");
         try:
-            raise IOError("Failed to update chorus effect level.");
+            cmd.write_verify(ADDR_CHORUS["EFFECT_LEVEL"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -108,7 +140,7 @@ class App:
         # TODO: Write level...
         print width;
         try:
-            raise IOError("Failed to update chorus width.");
+            cmd.write_verify(ADDR_CHORUS["WIDTH"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -116,7 +148,7 @@ class App:
         # TODO: Write level...
         print rate;
         try:
-            raise IOError("Failed to update chorus rate.");
+            cmd.write_verify(ADDR_CHORUS["RATE"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -124,7 +156,7 @@ class App:
         # TODO: Write level...
         print delay;
         try:
-            raise IOError("Failed to update chorus delay.");
+            cmd.write_verify(ADDR_CHORUS["DELAY"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -132,7 +164,15 @@ class App:
         # TODO: Write level...
         print num_voices;
         try:
-            raise IOError("Failed to update chorus number of voices.");
+            cmd.write_verify(ADDR_CHORUS["NUM_VOICES"], level, self.port);
+        except IOError, err:
+            sys.stderr.write('ERROR: %s\n' % str(err));
+
+    def set_compressor_enable(self, enable):
+        # TODO: Write level...
+        print level;
+        try:
+            cmd.write_verify(ADDR_COMPRESSOR["ENABLE"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -140,7 +180,7 @@ class App:
         # TODO: Write level...
         print time;
         try:
-            raise IOError("Failed to update compressor attack time.");
+            cmd.write_verify(ADDR_COMPRESSOR["ATTACK_TIME"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -148,7 +188,7 @@ class App:
         # TODO: Write level...
         print time;
         try:
-            raise IOError("Failed to update compressor release time.");
+            cmd.write_verify(ADDR_COMPRESSOR["RELEASE_TIME"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -156,7 +196,7 @@ class App:
         # TODO: Write level...
         print threshold;
         try:
-            raise IOError("Failed to update compressor threshold.");
+            cmd.write_verify(ADDR_COMPRESSOR["THRESHOLD"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -164,7 +204,7 @@ class App:
         # TODO: Write level...
         print ratio;
         try:
-            raise IOError("Failed to update compressor ratio.");
+            cmd.write_verify(ADDR_COMPRESSOR["RATIO"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
@@ -172,7 +212,7 @@ class App:
         # TODO: Write level...
         print gain;
         try:
-            raise IOError("Failed to update compressor make up gain.");
+            cmd.write_verify(ADDR_COMPRESSOR["MAKE_UP_GAIN"], level, self.port);
         except IOError, err:
             sys.stderr.write('ERROR: %s\n' % str(err));
 
