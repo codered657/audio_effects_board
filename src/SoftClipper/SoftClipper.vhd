@@ -117,7 +117,7 @@ architecture rtl of SoftClipper is
             WriteEdge <= WriteP(WriteP'high-1) and (not WriteP(WriteP'high));  -- TODO: Do I need to delay this more for a multicycle path??? Probably...otherwise this possibly gets there before address?
             
             AckP <= (CmdBusIn.Write or CmdBusIn.Read) & AckP(AckP'low to AckP'high-1);
-            CmdBusOut.Ack <= AckP(AckP'high); -- TODO: can this be tied directly to Ack instead of one last register?
+            CmdBusOut.Ack <= (not AckP(AckP'high)) and AckP(AckP'high-1); -- TODO: can this be tied directly to Ack instead of one last register?
 
             CmdAddr := CmdBusIn.Address(CmdAddr'range);
             -- TODO: add mask so unused bits get synthed out.
