@@ -8,6 +8,7 @@
 --      Steven Okai     06/22/14    1) Audio works.
 --                                  2) Added soft clipping effect.
 --                                  3) Added dynamic range compression.
+--      Steven Okai     08/23/14    1) Added command bus.
 --
 
 library ieee;
@@ -18,6 +19,8 @@ library unisim;
 use unisim.vcomponents.all;
 
 use work.GeneralFuncPkg.all;
+use work.CommandBusPkg.all;
+use work.AudioEffectsBoardPkg.all;
 
 entity AudioEffectsBoard is
     generic (
@@ -111,6 +114,9 @@ architecture rtl of AudioEffectsBoard is
     signal UARTRxDataLoop       : std_logic_vector(7 downto 0);
     signal UARTRxFIFOPop        : std_logic;
     signal UARTRxFIFOEmpty      : std_logic;
+    
+    signal CmdIn                : cmd_bus_in_vector(TOP_LEVEL_ADDRESS_DECODE'range);
+    signal CmdOut               : cmd_bus_out_vector(TOP_LEVEL_ADDRESS_DECODE'range);
     
     begin
     
@@ -402,9 +408,10 @@ architecture rtl of AudioEffectsBoard is
     
     regs : entity work.RegisterInterface
         generic map (
-            CLK_FREQ            => 10000000.0,  --: real := 25000000.0;
-            BAUD_RATE           => 19200.0,     --: real := 9600.0;
-            BAUD_ACCUM_WIDTH    => 16           --: positive := 16
+            CLK_FREQ            => 10000000.0,              --: real := 25000000.0;
+            BAUD_RATE           => 19200.0,                 --: real := 9600.0;
+            BAUD_ACCUM_WIDTH    => 16,                      --: positive := 16;
+            ADDRESS_DECODE      => TOP_LEVEL_ADDRESS_DECODE --: slv_64_vector
         )
         port map (
             UARTClk         => IOClk,       --: in  std_logic;
@@ -412,8 +419,19 @@ architecture rtl of AudioEffectsBoard is
             Reset           => Reset,       --: in  std_logic;
             
             RxIn            => UARTRx,      --: in  std_logic;
-            TxOut           => UARTTx       --: out std_logic
+            TxOut           => UARTTx,      --: out std_logic;
+            
+            CmdIn           => CmdIn,       --: out cmd_bus_in_vector;
+            CmdOut          => CmdOut       --: in  cmd_bus_out_vector
         );
+        
+    general_regs : process (Clk)
+        begin
+        if (rising_edge(Clk)) then
+            CmdOut(DECODE_GEN_REGS).Ack <= CmdIn(DECODE_GEN_REGS).Read; -- Should prob delay and edge detect this.
+            CmdOut(DECODE_GEN_REGS).Data(31 downto 0) <= VERSION_NUMBER;
+        end if;
+    end process general_regs;
         
     debug_data : process (BitClk, BitClkReset)
     

@@ -6,18 +6,22 @@
 --
 --  Revision History:
 --      Steven Okai     07/26/14    1) Initial revision.
+--      Steven Okai     07/26/14    1) Added command bus.
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use work.GeneralFuncPkg.all;
+use work.CommandBusPkg.all;
 
 entity RegisterInterface is
     generic (
         CLK_FREQ            : real := 25000000.0;
         BAUD_RATE           : real := 9600.0;
-        BAUD_ACCUM_WIDTH    : positive := 16
+        BAUD_ACCUM_WIDTH    : positive := 16;
+        ADDRESS_DECODE      : slv_64_vector
     );
     port (
         UARTClk         : in  std_logic;
@@ -25,7 +29,10 @@ entity RegisterInterface is
         Reset           : in  std_logic;
         
         RxIn            : in  std_logic;
-        TxOut           : out std_logic
+        TxOut           : out std_logic;
+        
+        CmdIn           : out cmd_bus_in_vector;
+        CmdOut          : in  cmd_bus_out_vector
     );
 
 end RegisterInterface;
@@ -82,6 +89,9 @@ architecture rtl of RegisterInterface is
     signal Ack              : std_logic;
     
     begin
+    
+    assert (ADDRESS_DECODE'length = CmdIn'length) report "ADDRESS_DECODE and CmdIn lengths do not match." severity FAILURE;
+    assert (ADDRESS_DECODE'length = CmdIn'length) report "CmdIn and CmdOut lengths do not match." severity FAILURE;
     
     uart : entity work.UARTWrapper
         generic map (
@@ -200,6 +210,10 @@ architecture rtl of RegisterInterface is
                     TxDataInt(0) <= '0' & ReadData(6 downto 0);
                     CommandState <= QUEUE_RESPONSE;
                     
+                    -- Read and write pulses one acked.
+                    ReadEn  <= '0';
+                    WriteEn <= '0';
+                    
                 when QUEUE_RESPONSE =>
                     if (TxFIFOFull = '0') then
                         -- Queue a byte.
@@ -228,16 +242,21 @@ architecture rtl of RegisterInterface is
     end process;
     
     process (Clk)
+        variable TempAcks   : std_logic_vector(CmdOut'range);
         begin
         if (rising_edge(Clk)) then
-        
-            Ack <= WriteEn or ReadEn;
             
-            if (WriteEn = '1') then
-                RegistersInt(slv_to_unsigned_int(Address(3 downto 0))) <= WriteData;
-            end if;
-            ReadData <= RegistersInt(slv_to_unsigned_int(Address(3 downto 0)));
+            for i in 0 to ADDRESS_DECODE'length-1 loop
+                if (std_match(pad_left(Address, 64, '0'), ADDRESS_DECODE(i))) then
+                    CmdIn(i).Write <= WriteEn;
+                    CmdIn(i).Read <= ReadEn;
+                    ReadData <= CmdOut(i).Data(ReadData'range);
+                end if;
+                TempAcks(i) := CmdOut(i).Ack;
+                CmdIn(i).Address(Address'range) <= Address;
+                CmdIn(i).Data(WriteData'range) <= WriteData;
+            end loop;
+            Ack <= or_reduce(TempAcks);    -- TODO: should I only look at the correct Ack instead? Creates a GIANT mux...
         end if;
     end process;
-    
 end rtl;

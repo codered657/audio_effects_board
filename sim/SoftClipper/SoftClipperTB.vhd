@@ -7,12 +7,14 @@
 --  Revision History:
 --      Steven Okai     06/22/14    1) Initial revision.
 --      Steven Okai     08/05/14    1) Updated to use command bus.
+--      Steven Okai     08/23/14    1) Fixed bugs in register writes.
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.GeneralFuncPkg.all;
+use work.CommandBusPkg.all;
 
 entity SoftClipperTB is
 end SoftClipperTB;
@@ -39,8 +41,10 @@ architecture test of SoftClipperTB is
     process
         begin
         
+        wait for 20 ns;
+        
         -- TODO: use constants, maybe add non-slv argument options by overloading functions?
-        cmd_bus_write_verify(x"0000", x"01000000", Clk, CmdBusIn, CmdBusOut);
+        cmd_bus_write_verify(x"0000", x"00008000", Clk, CmdBusIn, CmdBusOut);
         cmd_bus_write_verify(x"0004", x"00000001", Clk, CmdBusIn, CmdBusOut);
         
         wait until rising_edge(Clk);
